@@ -33,8 +33,8 @@ class CabangController extends Controller
             if ($input) {
                 $cabangInputCount++;
                 $status = 'Sudah Input';
-                $persentase = $input->persentase;
-                $kondisi = $persentase == 100 ? 'Baik' : ($persentase >= 50 ? 'Perlu Atensi' : 'Kritis');
+                $persentase = $input->score;
+                $kondisi = $persentase >= 65 ? 'Baik' : ($persentase >= 35 ? 'Perlu Atensi' : 'Kritis');
                 $updatedAt = $input->updated_at ? $input->updated_at->format('H:i WIB') : '-';
             } else {
                 $status = 'Belum Input';

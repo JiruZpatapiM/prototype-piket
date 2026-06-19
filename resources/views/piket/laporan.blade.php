@@ -1,6 +1,48 @@
 @extends('layouts.app')
 
 @section('content')
+<style>
+    /* Modern Action Buttons */
+    .btn-action {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.35rem 0.75rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        border-radius: 6px;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        text-decoration: none;
+        cursor: pointer;
+        background-color: #fff;
+        white-space: nowrap;
+    }
+    .btn-action svg {
+        margin-right: 0.3rem;
+    }
+    .btn-action:hover {
+        transform: translateY(-1px);
+    }
+
+    .btn-gambar {
+        color: #8b5cf6;
+        border: 1px solid #c4b5fd;
+    }
+    .btn-gambar:hover {
+        background-color: #f5f3ff;
+        border-color: #8b5cf6;
+        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    }
+
+    .btn-download {
+        color: #3b82f6;
+        border: 1px solid #93c5fd;
+    }
+    .btn-download:hover {
+        background-color: #eff6ff;
+        border-color: #3b82f6;
+        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    }
+</style>
 <div class="container mt-8 pb-8">
     
     <div class="card" style="padding: 1.5rem;">
@@ -80,7 +122,7 @@
                                 <span style="color: #94a3b8;">-</span>
                             @endif
                         </td>
-                        <td>{{ $item->catatan }}</td>
+                        <td>{!! $item->catatan !!}</td>
                         <td>
                             <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
                                 @if($item->file_path)
@@ -99,14 +141,16 @@
                                     @endphp
                                     
                                     @if(count($imageUrls) > 0)
-                                        <button type="button" onclick='openImageGallery({!! json_encode(array_values($imageUrls)) !!})' class="btn btn-primary btn-sm" style="padding: 0.3rem 0.8rem; font-size: 0.75rem; background: #8b5cf6; border-color: #8b5cf6;" title="Lihat Gambar">
-                                            🖼️ Lihat Gambar {{ count($imageUrls) > 1 ? '('.count($imageUrls).')' : '' }}
+                                        <button type="button" onclick='openImageGallery({!! json_encode(array_values($imageUrls)) !!})' class="btn-action btn-gambar" title="Lihat Gambar">
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                                            Gambar {{ count($imageUrls) > 1 ? '('.count($imageUrls).')' : '' }}
                                         </button>
                                     @endif
                                     
                                     @if(count($filePaths) > 0)
-                                        <a href="{{ route('piket.downloadLampiran', $item->id) }}" class="btn btn-outline btn-sm" style="padding: 0.3rem 0.8rem; font-size: 0.75rem; border-color: #3b82f6; color: #3b82f6;" title="Download Lampiran">
-                                            📎 Download
+                                        <a href="{{ route('piket.downloadLampiran', $item->id) }}" class="btn-action btn-download" title="Download Lampiran">
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                                            Download
                                         </a>
                                     @endif
                                 @endif

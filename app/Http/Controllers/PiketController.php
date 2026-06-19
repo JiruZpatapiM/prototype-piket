@@ -39,6 +39,17 @@ class PiketController extends Controller
         $template = null;
         if ($jenis_piket) {
             $template = \App\Models\Template::where('jenis_piket', $jenis_piket)->first();
+            
+            // Auto-seed Libur Nataru if missing, by copying Angkutan Lebaran
+            if (!$template && $jenis_piket === 'Libur Nataru') {
+                $angkutan = \App\Models\Template::where('jenis_piket', 'Angkutan Lebaran')->first();
+                if ($angkutan) {
+                    $template = \App\Models\Template::create([
+                        'jenis_piket' => 'Libur Nataru',
+                        'content' => $angkutan->content
+                    ]);
+                }
+            }
         }
         
         return view('piket.input', compact('jenis_piket', 'history', 'template', 'lokasi'));

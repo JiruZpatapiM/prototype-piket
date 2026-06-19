@@ -87,7 +87,7 @@
                         <td style="padding: 1rem;">
                             <div style="display: flex; align-items: center; gap: 0.5rem;">
                                 <div style="width: 100px; height: 6px; background: var(--bg-tertiary); border-radius: 3px; overflow: hidden;">
-                                    <div style="width: {{ $cabang['persentase'] }}%; height: 100%; background: {{ $cabang['persentase'] == 100 ? '#10b981' : ($cabang['persentase'] >= 50 ? '#f59e0b' : '#ef4444') }};"></div>
+                                    <div style="width: {{ $cabang['persentase'] }}%; height: 100%; background: {{ $cabang['kondisi'] == 'Baik' ? '#10b981' : ($cabang['kondisi'] == 'Perlu Atensi' ? '#f59e0b' : ($cabang['kondisi'] == 'Kritis' ? '#ef4444' : 'transparent')) }};"></div>
                                 </div>
                                 <span style="font-weight: bold; font-size: 0.85rem;">{{ $cabang['persentase'] }}%</span>
                             </div>

@@ -264,7 +264,7 @@
                             <td>{{ $detail->item_name }}</td>
                             
                             @if(str_contains($category, 'RESUME'))
-                                <td>{{ $detail->kondisi }}</td>
+                                <td>{!! $detail->kondisi !!}</td>
                             @else
                                 <td style="text-align: center;">
                                     @php
@@ -293,7 +293,7 @@
         @if($input->catatan)
             <div class="section-title">CATATAN TAMBAHAN / REKOMENDASI</div>
             <div class="note-box">
-                {!! nl2br(e($input->catatan)) !!}
+                {!! $input->catatan !!}
             </div>
         @endif
 

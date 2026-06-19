@@ -224,5 +224,10 @@ class AdminAndTemplateSeeder extends Seeder
             ['jenis_piket' => 'Angkutan Lebaran'],
             ['content' => $angkutanTemplate]
         );
+
+        Template::updateOrCreate(
+            ['jenis_piket' => 'Libur Nataru'],
+            ['content' => $angkutanTemplate]
+        );
     }
 }

@@ -207,7 +207,7 @@ function renderResumeSection($sectionName, $items, $sIndex = null, $subIndex = n
         $html .= '<span style="font-weight: 600; font-size: 0.95rem;">' . htmlspecialchars($item) . '</span>';
         $html .= '</div>';
         $draftUraian = $draftDetails[$sectionName]['Resume'][$item]['kondisi'] ?? '';
-        $html .= '<textarea name="items['.$sectionName.'][Resume]['.$item.'][uraian]" class="form-control req-resume" rows="2" placeholder="Tuliskan uraian detail di sini..." required oninput="updateProgress()">'.htmlspecialchars($draftUraian).'</textarea>';
+        $html .= '<textarea name="items['.$sectionName.'][Resume]['.$item.'][uraian]" class="form-control req-resume tinymce-editor" rows="2" placeholder="Tuliskan uraian detail di sini..." required>'.htmlspecialchars($draftUraian).'</textarea>';
         $html .= '</div>';
     }
     
@@ -265,6 +265,7 @@ function renderResumeSection($sectionName, $items, $sIndex = null, $subIndex = n
                     <option value="">-- Pilih Jenis Piket --</option>
                     <option value="Daily" {{ $jenis_piket == 'Daily' ? 'selected' : '' }}>Daily</option>
                     <option value="Angkutan Lebaran" {{ $jenis_piket == 'Angkutan Lebaran' ? 'selected' : '' }}>Angkutan Lebaran</option>
+                    <option value="Libur Nataru" {{ $jenis_piket == 'Libur Nataru' ? 'selected' : '' }}>Libur Nataru</option>
                 </select>
             </div>
         </div>

@@ -38,6 +38,7 @@
                     <option value="">Semua Tipe</option>
                     <option value="Akhir Pekan" {{ $tipe_detail == 'Akhir Pekan' ? 'selected' : '' }}>Daily</option>
                     <option value="Angkutan Lebaran" {{ $tipe_detail == 'Angkutan Lebaran' ? 'selected' : '' }}>Angkutan Lebaran</option>
+                    <option value="Libur Nataru" {{ $tipe_detail == 'Libur Nataru' ? 'selected' : '' }}>Libur Nataru</option>
                 </select>
             </div>
 
