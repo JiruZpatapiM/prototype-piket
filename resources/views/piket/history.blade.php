@@ -97,9 +97,31 @@
                                 @endif
                                 
                                 @if($item->file_path)
-                                    <a href="{{ route('piket.downloadLampiran', $item->id) }}" class="btn btn-outline btn-sm" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; border-color: #3b82f6; color: #3b82f6;" title="Download Lampiran">
-                                        📎 Lampiran
-                                    </a>
+                                    @php
+                                        $filePaths = [];
+                                        $decoded = json_decode($item->file_path, true);
+                                        $filePaths = is_array($decoded) ? $decoded : [$item->file_path];
+                                        
+                                        $imagePaths = array_filter($filePaths, function($path) {
+                                            return preg_match('/\.(jpg|jpeg|png)$/i', $path);
+                                        });
+                                        
+                                        $imageUrls = array_map(function($path) {
+                                            return asset('storage/' . $path);
+                                        }, $imagePaths);
+                                    @endphp
+                                    
+                                    @if(count($imageUrls) > 0)
+                                        <button type="button" onclick='openImageGallery({!! json_encode(array_values($imageUrls)) !!})' class="btn btn-outline btn-sm" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; border-color: #8b5cf6; color: #8b5cf6;" title="Lihat Gambar">
+                                            🖼️ Gambar {{ count($imageUrls) > 1 ? '('.count($imageUrls).')' : '' }}
+                                        </button>
+                                    @endif
+                                    
+                                    @if(count($filePaths) > 0)
+                                        <a href="{{ route('piket.downloadLampiran', $item->id) }}" class="btn btn-outline btn-sm" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; border-color: #3b82f6; color: #3b82f6;" title="Download Lampiran">
+                                            📎 Download
+                                        </a>
+                                    @endif
                                 @endif
                             </div>
                         </td>
@@ -126,4 +148,72 @@
     </div>
 
 </div>
+
+<!-- Image Modal -->
+<div id="imageModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
+    <div id="imageCounter" style="position: absolute; top: 30px; left: 50%; transform: translateX(-50%); color: white; font-weight: bold; background: rgba(0,0,0,0.5); padding: 5px 15px; border-radius: 20px; z-index: 10001; display: none;"></div>
+    
+    <button type="button" onclick="closeImageModal()" style="position: absolute; top: 20px; right: 30px; background: rgba(255,255,255,0.2); border: none; color: white; font-size: 2rem; width: 50px; height: 50px; border-radius: 50%; cursor: pointer; z-index: 10000; display: flex; align-items: center; justify-content: center; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.4)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">&times;</button>
+    
+    <button id="prevImageBtn" type="button" onclick="prevImage(event)" style="position: absolute; left: 30px; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.2); border: none; color: white; font-size: 2rem; width: 50px; height: 50px; border-radius: 50%; cursor: pointer; z-index: 10000; display: none; align-items: center; justify-content: center;" onmouseover="this.style.background='rgba(255,255,255,0.4)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">&#10094;</button>
+    
+    <button id="nextImageBtn" type="button" onclick="nextImage(event)" style="position: absolute; right: 30px; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.2); border: none; color: white; font-size: 2rem; width: 50px; height: 50px; border-radius: 50%; cursor: pointer; z-index: 10000; display: none; align-items: center; justify-content: center;" onmouseover="this.style.background='rgba(255,255,255,0.4)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">&#10095;</button>
+
+    <img id="modalImage" src="" style="max-width: 90%; max-height: 90vh; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); object-fit: contain;">
+</div>
+
+<script>
+    let currentGallery = [];
+    let currentGalleryIndex = 0;
+
+    function openImageGallery(urls) {
+        if(!urls || urls.length === 0) return;
+        currentGallery = urls;
+        currentGalleryIndex = 0;
+        document.getElementById('modalImage').src = currentGallery[currentGalleryIndex];
+        document.getElementById('imageModal').style.display = 'flex';
+        
+        document.getElementById('prevImageBtn').style.display = currentGallery.length > 1 ? 'flex' : 'none';
+        document.getElementById('nextImageBtn').style.display = currentGallery.length > 1 ? 'flex' : 'none';
+        updateImageCounter();
+    }
+    
+    function nextImage(e) {
+        e.stopPropagation();
+        if(currentGallery.length <= 1) return;
+        currentGalleryIndex = (currentGalleryIndex + 1) % currentGallery.length;
+        document.getElementById('modalImage').src = currentGallery[currentGalleryIndex];
+        updateImageCounter();
+    }
+
+    function prevImage(e) {
+        e.stopPropagation();
+        if(currentGallery.length <= 1) return;
+        currentGalleryIndex = (currentGalleryIndex - 1 + currentGallery.length) % currentGallery.length;
+        document.getElementById('modalImage').src = currentGallery[currentGalleryIndex];
+        updateImageCounter();
+    }
+
+    function updateImageCounter() {
+        const counter = document.getElementById('imageCounter');
+        if (currentGallery.length > 1) {
+            counter.style.display = 'block';
+            counter.innerText = (currentGalleryIndex + 1) + ' / ' + currentGallery.length;
+        } else {
+            counter.style.display = 'none';
+        }
+    }
+
+    function closeImageModal() {
+        document.getElementById('imageModal').style.display = 'none';
+        document.getElementById('modalImage').src = '';
+    }
+    
+    // Close modal when clicking outside the image
+    document.getElementById('imageModal').addEventListener('click', function(e) {
+        if(e.target === this) {
+            closeImageModal();
+        }
+    });
+</script>
 @endsection

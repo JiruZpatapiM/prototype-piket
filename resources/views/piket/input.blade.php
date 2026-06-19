@@ -14,6 +14,9 @@
     .segmented-control input[type="radio"]:checked + .segment-btn.kondisi-default { background: #3b82f6; color: white; box-shadow: 0 2px 4px rgba(59,130,246,0.2); }
     .segmented-control input[type="radio"]:checked + .segment-btn.metode-btn { background: var(--bg-secondary); border: 1px solid var(--accent-primary); color: var(--accent-primary); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
 
+    /* Hide TinyMCE API Warning */
+    .tox-notifications-container { display: none !important; }
+
     .accordion-item { margin-bottom: 1.5rem; border-radius: 12px; background: var(--bg-primary); box-shadow: 0 2px 4px rgba(0,0,0,0.02); transition: all 0.3s ease; }
     .accordion-item:hover { box-shadow: 0 8px 16px rgba(0,0,0,0.06); }
     .accordion-header { cursor: pointer; padding: 1.25rem 1.75rem; background: var(--bg-primary); display: flex; justify-content: space-between; align-items: center; border-radius: 12px; transition: all 0.2s ease; border: 1px solid var(--border-color); }
@@ -153,15 +156,16 @@ function renderSection($sectionName, $subSectionName, $items, $kondisiOptions = 
             $html .= '</div></div>';
         }
         
-        if (auth()->check() && auth()->user()->role === 'admin' && $templateId !== null) {
-            $html .= '<div style="display: flex; align-items: flex-end; padding-bottom: 0.2rem;">';
-            $html .= '<button type="button" class="btn-delete-item" onclick="deleteTemplateItem('.$templateId.', '.$sIndex.', '.$subIndex.', '.$itemIdx.')" title="Hapus Item">&times;</button>';
-            $html .= '</div>';
-        }
-
         $html .= '</div>'; // End controls
         $html .= '</div>'; // End row
     }
+    
+    // Add TinyMCE textarea for section notes
+    $draftCatatan = $draftDetails[$sectionName][$safeSubName]['_catatan_']['kondisi'] ?? '';
+    $html .= '<div style="padding: 1.5rem; background: var(--bg-secondary); border-top: 1px dashed var(--border-color); border-bottom-left-radius: 12px; border-bottom-right-radius: 12px;">';
+    $html .= '<label style="display: block; font-size: 0.85rem; color: var(--text-secondary); font-weight: 700; margin-bottom: 0.8rem; text-transform: uppercase;">Catatan / Temuan Khusus pada '.htmlspecialchars($title).' (Opsional)</label>';
+    $html .= '<textarea class="tinymce-editor" name="items['.$sectionName.']['.$safeSubName.'][_catatan_][kondisi]" rows="4" placeholder="Tambahkan catatan khusus untuk bagian ini...">'.htmlspecialchars($draftCatatan).'</textarea>';
+    $html .= '</div>';
     
     $html .= '</div>'; // End content
     $html .= '</div>'; // End accordion item
@@ -201,9 +205,6 @@ function renderResumeSection($sectionName, $items, $sIndex = null, $subIndex = n
         $html .= '<div class="resume-row">';
         $html .= '<div style="display: flex; justify-content: space-between; align-items: center;">';
         $html .= '<span style="font-weight: 600; font-size: 0.95rem;">' . htmlspecialchars($item) . '</span>';
-        if (auth()->check() && auth()->user()->role === 'admin' && $templateId !== null) {
-            $html .= '<button type="button" class="btn-delete-item" onclick="deleteTemplateItem('.$templateId.', '.$sIndex.', '.$subIndex.', '.$itemIdx.')">&times;</button>';
-        }
         $html .= '</div>';
         $draftUraian = $draftDetails[$sectionName]['Resume'][$item]['kondisi'] ?? '';
         $html .= '<textarea name="items['.$sectionName.'][Resume]['.$item.'][uraian]" class="form-control req-resume" rows="2" placeholder="Tuliskan uraian detail di sini..." required oninput="updateProgress()">'.htmlspecialchars($draftUraian).'</textarea>';
@@ -379,14 +380,14 @@ function renderResumeSection($sectionName, $items, $sIndex = null, $subIndex = n
                         Upload Lampiran Laporan (Opsional)
                     </label>
                     <div class="dropzone" id="dropzone">
-                        <input type="file" name="lampiran" id="lampiran" accept=".pdf,.doc,.docx" style="display: none;" onchange="updateFileName()">
+                        <input type="file" name="lampiran[]" id="lampiran" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" multiple style="display: none;" onchange="updateFileName()">
                         <label for="lampiran" style="cursor: pointer; display: block; margin: 0;">
                             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="2" style="margin: 0 auto 1rem auto;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
                             <span style="color: var(--accent-primary); font-weight: 600;">Klik untuk memilih file</span> atau tarik file ke sini
                             <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.5rem;" id="file-name">
                                 {{ isset($draft) && $draft->file_path ? 'File Tersimpan: ' . basename($draft->file_path) : '' }}
                             </div>
-                            <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.5rem;">Format: PDF, DOC, DOCX. Max: 10MB. {{ isset($draft) && $draft->file_path ? '(Abaikan jika tidak ingin mengubah file)' : '' }}</div>
+                            <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.5rem;">Format: PDF, DOC, DOCX, JPG, PNG. Max: 10MB. {{ isset($draft) && $draft->file_path ? '(Abaikan jika tidak ingin mengubah file)' : '' }}</div>
                         </label>
                     </div>
                 </div>
@@ -659,7 +660,11 @@ function renderResumeSection($sectionName, $items, $sIndex = null, $subIndex = n
         const input = document.getElementById('lampiran');
         const display = document.getElementById('file-name');
         if (input.files.length > 0) {
-            display.innerText = "File Terpilih: " + input.files[0].name;
+            if (input.files.length === 1) {
+                display.innerText = "File Terpilih: " + input.files[0].name;
+            } else {
+                display.innerText = input.files.length + " File Terpilih";
+            }
             document.getElementById('dropzone').style.borderColor = "var(--accent-primary)";
             document.getElementById('dropzone').style.background = "rgba(14, 165, 233, 0.05)";
         } else {
@@ -903,4 +908,47 @@ function renderResumeSection($sectionName, $items, $sIndex = null, $subIndex = n
         openCustomModal('delete');
     }
 </script>
+
+<script src="https://cdn.ckeditor.com/ckeditor5/39.0.1/classic/ckeditor.js"></script>
+<style>
+    .ck-editor__editable_inline {
+        min-height: 150px;
+        padding: 1rem 1.5rem !important;
+    }
+    /* Kembalikan styling list bawaan yang ter-reset oleh CSS global */
+    .ck.ck-content ul {
+        list-style-type: disc !important;
+        padding-left: 2.5rem !important;
+        margin-left: 0 !important;
+    }
+    .ck.ck-content ol {
+        list-style-type: decimal !important;
+        padding-left: 2.5rem !important;
+        margin-left: 0 !important;
+    }
+    .ck.ck-content li {
+        display: list-item !important;
+        margin-bottom: 0.3rem !important;
+    }
+</style>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        document.querySelectorAll('.tinymce-editor').forEach(function(textarea) {
+            ClassicEditor
+                .create(textarea, {
+                    toolbar: [ 'heading', '|', 'bold', 'italic', 'bulletedList', 'numberedList', '|', 'undo', 'redo' ]
+                })
+                .then(function(editor) {
+                    editor.model.document.on('change:data', function() {
+                        editor.updateSourceElement();
+                        if(typeof updateProgress === 'function') updateProgress();
+                    });
+                })
+                .catch(function(error) {
+                    console.error(error);
+                });
+        });
+    });
+</script>
+
 @endsection

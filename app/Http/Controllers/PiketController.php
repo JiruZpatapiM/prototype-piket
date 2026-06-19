@@ -17,6 +17,16 @@ class PiketController extends Controller
         $query = PiketInput::orderBy('created_at', 'desc');
         
         if (Auth::check() && Auth::user()->role !== 'admin') {
+            // Check if already submitted today
+            $alreadySubmitted = PiketInput::where('user_id', Auth::id())
+                ->whereDate('created_at', \Carbon\Carbon::today())
+                ->where('status', 'submitted')
+                ->exists();
+                
+            if ($alreadySubmitted) {
+                return redirect()->route('piket.history')->with('error', 'Anda sudah mengirim laporan hari ini. Silakan kembali besok setelah jam 00:00.');
+            }
+            
             $query->where('user_id', Auth::id());
         } else {
             // Admin filtering logic
@@ -36,21 +46,43 @@ class PiketController extends Controller
 
     public function store(Request $request)
     {
+        // Pastikan kolom file_path bertipe TEXT agar bisa menampung banyak file
+        try {
+            \Illuminate\Support\Facades\DB::statement('ALTER TABLE piket_inputs MODIFY file_path TEXT');
+        } catch (\Exception $e) {}
+
         $validated = $request->validate([
             'tanggal' => 'required|date',
             'lokasi' => 'required|string',
             'jenis_piket' => 'required|string',
             'catatan' => 'nullable|string',
             'items' => 'nullable|array',
-            'lampiran' => 'nullable|file|mimes:pdf,doc,docx|max:10240', // 10MB limit
+            'lampiran' => 'nullable|array|max:10', // Max 10 files
+            'lampiran.*' => 'file|mimes:pdf,doc,docx,jpg,jpeg,png|max:10240', // 10MB limit per file
         ]);
 
-        $filePath = null;
+        $filePaths = [];
         if ($request->hasFile('lampiran')) {
-            $filePath = $request->file('lampiran')->store('lampiran_piket', 'public');
+            foreach ($request->file('lampiran') as $file) {
+                // Generate a short filename to stay within varchar(255) when JSON encoded
+                $path = $file->storeAs('lampiran_piket', substr(uniqid(), -8) . '.' . $file->extension(), 'public');
+                $filePaths[] = $path;
+            }
         }
+        $filePath = count($filePaths) > 0 ? json_encode($filePaths) : null;
 
         $isDraft = $request->input('action') === 'draft';
+        
+        if (!$isDraft && \Illuminate\Support\Facades\Auth::check() && \Illuminate\Support\Facades\Auth::user()->role !== 'admin') {
+            $alreadySubmitted = PiketInput::where('user_id', \Illuminate\Support\Facades\Auth::id())
+                ->whereDate('created_at', \Carbon\Carbon::today())
+                ->where('status', 'submitted')
+                ->exists();
+                
+            if ($alreadySubmitted) {
+                return redirect()->route('piket.history')->with('error', 'Anda hanya dapat mengirim laporan (Submit) 1 kali per hari. Laporan Anda untuk hari ini sudah terkirim.');
+            }
+        }
         
         // Calculate percentages and scores
         $template = \App\Models\Template::where('jenis_piket', $validated['jenis_piket'])->first();
@@ -73,6 +105,8 @@ class PiketController extends Controller
         foreach ($itemsData as $category => $subcategories) {
             foreach ($subcategories as $subcategory => $items) {
                 foreach ($items as $item_name => $data) {
+                    if ($item_name === '_catatan_') continue;
+                    
                     $kondisi = $data['kondisi'] ?? $data['uraian'] ?? null;
                     if ($kondisi !== null && trim($kondisi) !== '') {
                         $answeredItems++;
@@ -135,6 +169,17 @@ class PiketController extends Controller
             return redirect()->route('piket.history')->with('error', 'Hanya data draft yang dapat diedit.');
         }
 
+        if (Auth::check() && Auth::user()->role !== 'admin') {
+            $alreadySubmitted = PiketInput::where('user_id', Auth::id())
+                ->whereDate('created_at', \Carbon\Carbon::today())
+                ->where('status', 'submitted')
+                ->exists();
+                
+            if ($alreadySubmitted) {
+                return redirect()->route('piket.history')->with('error', 'Anda sudah mengirim laporan hari ini. Silakan kembali besok setelah jam 00:00.');
+            }
+        }
+
         $jenis_piket = $draft->jenis_piket;
         $lokasi = $draft->lokasi;
         $template = \App\Models\Template::where('jenis_piket', $jenis_piket)->first();
@@ -151,6 +196,11 @@ class PiketController extends Controller
 
     public function update(Request $request, $id)
     {
+        // Pastikan kolom file_path bertipe TEXT agar bisa menampung banyak file
+        try {
+            \Illuminate\Support\Facades\DB::statement('ALTER TABLE piket_inputs MODIFY file_path TEXT');
+        } catch (\Exception $e) {}
+
         $input = PiketInput::findOrFail($id);
         
         // Ensure RBAC for update
@@ -168,19 +218,44 @@ class PiketController extends Controller
             'jenis_piket' => 'required|string',
             'catatan' => 'nullable|string',
             'items' => 'nullable|array',
-            'lampiran' => 'nullable|file|mimes:pdf,doc,docx|max:10240',
+            'lampiran' => 'nullable|array|max:10',
+            'lampiran.*' => 'file|mimes:pdf,doc,docx,jpg,jpeg,png|max:10240',
         ]);
 
-        $filePath = $input->file_path; // Keep existing if not uploaded
-        if ($request->hasFile('lampiran')) {
-            // Delete old file if exists
-            if ($filePath && \Illuminate\Support\Facades\Storage::disk('public')->exists($filePath)) {
-                \Illuminate\Support\Facades\Storage::disk('public')->delete($filePath);
-            }
-            $filePath = $request->file('lampiran')->store('lampiran_piket', 'public');
+        // Keep existing files if any
+        $filePaths = [];
+        if ($input->file_path) {
+            $decoded = json_decode($input->file_path, true);
+            $filePaths = is_array($decoded) ? $decoded : [$input->file_path];
         }
 
+        if ($request->hasFile('lampiran')) {
+            // Delete old files if uploading new ones (optional, let's just append or replace? Let's replace for simplicity)
+            foreach ($filePaths as $oldPath) {
+                if (\Illuminate\Support\Facades\Storage::disk('public')->exists($oldPath)) {
+                    \Illuminate\Support\Facades\Storage::disk('public')->delete($oldPath);
+                }
+            }
+            $filePaths = [];
+            foreach ($request->file('lampiran') as $file) {
+                $path = $file->storeAs('lampiran_piket', substr(uniqid(), -8) . '.' . $file->extension(), 'public');
+                $filePaths[] = $path;
+            }
+        }
+        $filePath = count($filePaths) > 0 ? json_encode($filePaths) : null;
+
         $isDraft = $request->input('action') === 'draft';
+        
+        if (!$isDraft && \Illuminate\Support\Facades\Auth::check() && \Illuminate\Support\Facades\Auth::user()->role !== 'admin') {
+            $alreadySubmitted = PiketInput::where('user_id', \Illuminate\Support\Facades\Auth::id())
+                ->whereDate('created_at', \Carbon\Carbon::today())
+                ->where('status', 'submitted')
+                ->exists();
+                
+            if ($alreadySubmitted) {
+                return redirect()->route('piket.history')->with('error', 'Anda hanya dapat mengirim laporan (Submit) 1 kali per hari. Laporan Anda untuk hari ini sudah terkirim.');
+            }
+        }
         
         // Calculate percentages and scores
         $template = \App\Models\Template::where('jenis_piket', $validated['jenis_piket'])->first();
@@ -203,6 +278,8 @@ class PiketController extends Controller
         foreach ($itemsData as $category => $subcategories) {
             foreach ($subcategories as $subcategory => $items) {
                 foreach ($items as $item_name => $data) {
+                    if ($item_name === '_catatan_') continue;
+                    
                     $kondisi = $data['kondisi'] ?? $data['uraian'] ?? null;
                     if ($kondisi !== null && trim($kondisi) !== '') {
                         $answeredItems++;

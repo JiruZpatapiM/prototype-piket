@@ -250,8 +250,15 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @php $no = 1; @endphp
+                    @php 
+                        $no = 1; 
+                        $catatanKhusus = null;
+                    @endphp
                     @foreach($details as $detail)
+                        @if($detail->item_name === '_catatan_')
+                            @php $catatanKhusus = $detail->kondisi; @endphp
+                            @continue
+                        @endif
                         <tr>
                             <td style="text-align: center;">{{ $no++ }}</td>
                             <td>{{ $detail->item_name }}</td>
@@ -272,12 +279,44 @@
                     @endforeach
                 </tbody>
             </table>
+            
+            @if(!empty($catatanKhusus))
+                <div style="background: #f8f9fa; border: 1px dashed #64b5f6; padding: 10px; margin-bottom: 20px; font-size: 9pt;">
+                    <strong>Catatan / Temuan Khusus pada {{ strtoupper($displayCategory) }}:</strong>
+                    <div style="margin-top: 5px; color: #444;">
+                        {!! $catatanKhusus !!}
+                    </div>
+                </div>
+            @endif
         @endforeach
 
         @if($input->catatan)
             <div class="section-title">CATATAN TAMBAHAN / REKOMENDASI</div>
             <div class="note-box">
                 {!! nl2br(e($input->catatan)) !!}
+            </div>
+        @endif
+
+        <!-- Lampiran Foto -->
+        @php
+            $filePaths = [];
+            if ($input->file_path) {
+                $decoded = json_decode($input->file_path, true);
+                $filePaths = is_array($decoded) ? $decoded : [$input->file_path];
+            }
+            $imagePaths = array_filter($filePaths, function($path) {
+                return preg_match('/\.(jpg|jpeg|png)$/i', $path);
+            });
+        @endphp
+
+        @if(count($imagePaths) > 0)
+            <div style="page-break-inside: avoid; margin-top: 30px;">
+                <div class="section-title">LAMPIRAN FOTO / DOKUMENTASI</div>
+                <div style="text-align: center; margin-top: 15px;">
+                    @foreach($imagePaths as $path)
+                        <img src="{{ storage_path('app/public/' . $path) }}" style="max-width: 45%; max-height: 250px; border: 1px solid #ccc; padding: 5px; margin: 5px; display: inline-block; vertical-align: top;">
+                    @endforeach
+                </div>
             </div>
         @endif
 
