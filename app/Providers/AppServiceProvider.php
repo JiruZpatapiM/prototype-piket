@@ -22,5 +22,13 @@ class AppServiceProvider extends ServiceProvider
         \Illuminate\Support\Facades\Gate::define('admin', function ($user) {
             return $user->role === 'admin';
         });
+
+        \Illuminate\Support\Facades\Gate::define('manager', function ($user) {
+            return $user->role === 'manager';
+        });
+
+        \Illuminate\Support\Facades\Gate::define('admin_or_manager', function ($user) {
+            return in_array($user->role, ['admin', 'manager']);
+        });
     }
 }

@@ -33,22 +33,37 @@
         box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
     }
 
-    .btn-download {
-        color: #3b82f6;
-        border: 1px solid #93c5fd;
-    }
     .btn-download:hover {
         background-color: #eff6ff;
         border-color: #3b82f6;
         box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
     }
+
+    .btn-approve { color: #10b981; border: 1px solid #6ee7b7; }
+    .btn-approve:hover { background-color: #ecfdf5; border-color: #10b981; }
+
+    .btn-reject { color: #ef4444; border: 1px solid #fca5a5; }
+    .btn-reject:hover { background-color: #fef2f2; border-color: #ef4444; }
+
+    /* Modal Styles */
+    .reject-modal {
+        display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;
+        backdrop-filter: blur(4px);
+    }
+    .reject-modal.show { display: flex; }
+    .reject-modal-content {
+        background: var(--bg-primary); padding: 2rem; border-radius: 12px;
+        width: 90%; max-width: 600px; box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    }
+
 </style>
 <div class="container mt-8 pb-8">
     
     <div class="card" style="padding: 1.5rem;">
         <div class="flex items-center gap-2 mb-6 text-accent font-bold" style="font-size: 1.25rem;">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-            Daftar Lampiran Laporan Cabang
+            Daftar Konfirmasi Laporan Cabang
         </div>
 
         <div class="flex justify-between items-center mb-4 text-sm">
@@ -94,29 +109,33 @@
                 <tbody>
                     @forelse($history as $item)
                     <tr>
-                        <td>{{ $item->tanggal }}</td>
-                        <td>{{ $item->lokasi }}</td>
-                        <td style="text-transform: uppercase;">{{ $item->jenis_piket }}</td>
-                        <td>
+                        <td style="white-space: nowrap;">{{ $item->tanggal }}</td>
+                        <td style="white-space: nowrap;">{{ $item->lokasi }}</td>
+                        <td style="text-transform: uppercase; white-space: nowrap;">{{ $item->jenis_piket }}</td>
+                        <td style="white-space: nowrap;">
                             <span style="font-weight: 600; color: var(--text-primary);">
                                 {{ $item->user ? $item->user->name : 'N/A' }}
                             </span>
                         </td>
                         <td>
-                            @if($item->status == 'draft')
-                                <span style="background: #e2e8f0; color: #475569; padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: bold; font-size: 0.8rem;">Draft</span>
+                            @if($item->status == 'pending')
+                                <span style="background: #fef3c7; color: #d97706; padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: bold; font-size: 0.8rem; white-space: nowrap;">Menunggu Konfirmasi</span>
+                            @elseif($item->status == 'approved' || $item->status == 'submitted')
+                                <span style="background: #d1fae5; color: #059669; padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: bold; font-size: 0.8rem; white-space: nowrap;">Disetujui</span>
+                            @elseif($item->status == 'rejected')
+                                <span style="background: #fee2e2; color: #dc2626; padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: bold; font-size: 0.8rem; white-space: nowrap;">Ditolak</span>
                             @else
-                                <span style="background: #d1fae5; color: #059669; padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: bold; font-size: 0.8rem;">Submitted</span>
+                                <span style="background: #e2e8f0; color: #475569; padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: bold; font-size: 0.8rem; white-space: nowrap;">Draft</span>
                             @endif
                         </td>
                         <td>
-                            @if($item->status == 'submitted')
+                            @if(in_array($item->status, ['submitted', 'approved', 'pending']))
                                 @if($item->score >= 65)
-                                    <span style="background: #d1fae5; color: #059669; padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: bold; font-size: 0.8rem;">{{ $item->score }}% (Baik)</span>
+                                    <span style="background: #d1fae5; color: #059669; padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: bold; font-size: 0.8rem; white-space: nowrap;">{{ $item->score }}% (Baik)</span>
                                 @elseif($item->score >= 35)
-                                    <span style="background: #fef3c7; color: #d97706; padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: bold; font-size: 0.8rem;">{{ $item->score }}% (Perlu Atensi)</span>
+                                    <span style="background: #fef3c7; color: #d97706; padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: bold; font-size: 0.8rem; white-space: nowrap;">{{ $item->score }}% (Perlu Atensi)</span>
                                 @else
-                                    <span style="background: #fee2e2; color: #dc2626; padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: bold; font-size: 0.8rem;">{{ $item->score }}% (Kritis)</span>
+                                    <span style="background: #fee2e2; color: #dc2626; padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: bold; font-size: 0.8rem; white-space: nowrap;">{{ $item->score }}% (Kritis)</span>
                                 @endif
                             @else
                                 <span style="color: #94a3b8;">-</span>
@@ -154,12 +173,23 @@
                                         </a>
                                     @endif
                                 @endif
+                                
+                                @if($item->status === 'pending')
+                                    <button type="button" class="btn-action btn-approve" title="Setujui Laporan" onclick="openApproveModal({{ $item->id }})">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                        Setujui
+                                    </button>
+                                    <button type="button" onclick="openRejectModal({{ $item->id }})" class="btn-action btn-reject" title="Tolak Laporan">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                        Tolak
+                                    </button>
+                                @endif
                             </div>
                         </td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="8" class="text-center" style="padding: 2rem;">Tidak ada laporan dengan lampiran yang ditemukan.</td>
+                        <td colspan="8" class="text-center" style="padding: 2rem;">Tidak ada laporan yang ditemukan.</td>
                     </tr>
                     @endforelse
                 </tbody>
@@ -244,6 +274,89 @@
     document.getElementById('imageModal').addEventListener('click', function(e) {
         if(e.target === this) {
             closeImageModal();
+        }
+    });
+
+    // Reject Modal Logic
+    function openRejectModal(id) {
+        document.getElementById('rejectModal').classList.add('show');
+        document.getElementById('rejectForm').action = '/piket/reject/' + id;
+    }
+
+    function closeRejectModal() {
+        document.getElementById('rejectModal').classList.remove('show');
+    }
+
+    // Approve Modal Logic
+    function openApproveModal(id) {
+        document.getElementById('approveModal').classList.add('show');
+        document.getElementById('approveForm').action = '/piket/approve/' + id;
+    }
+
+    function closeApproveModal() {
+        document.getElementById('approveModal').classList.remove('show');
+    }
+</script>
+
+<!-- Approve Modal -->
+<div id="approveModal" class="reject-modal">
+    <div class="reject-modal-content">
+        <h3 style="margin-bottom: 1rem; color: var(--text-primary); font-size: 1.25rem;">Konfirmasi Persetujuan</h3>
+        <p style="margin-bottom: 1.5rem; color: var(--text-secondary); font-size: 0.875rem;">Apakah Anda yakin ingin menyetujui laporan ini? Data akan langsung masuk ke perhitungan dashboard.</p>
+        <form id="approveForm" method="POST" action="">
+            @csrf
+            <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+                <button type="button" class="btn btn-outline" onclick="closeApproveModal()">Batal</button>
+                <button type="submit" class="btn btn-primary" style="background-color: #10b981; border-color: #10b981; color: white;">Ya, Setujui</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Reject Modal -->
+<div id="rejectModal" class="reject-modal">
+    <div class="reject-modal-content">
+        <h3 style="margin-bottom: 1rem; color: var(--text-primary); font-size: 1.25rem;">Tolak Laporan</h3>
+        <p style="margin-bottom: 1rem; color: var(--text-secondary); font-size: 0.875rem;">Silakan berikan alasan penolakan agar user dapat memperbaiki laporannya.</p>
+        <form id="rejectForm" method="POST" action="">
+            @csrf
+            <div class="form-group mb-4">
+                <textarea name="alasan_tolak" class="form-control ckeditor" rows="4"></textarea>
+            </div>
+            <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+                <button type="button" class="btn btn-outline" onclick="closeRejectModal()">Batal</button>
+                <button type="submit" class="btn btn-primary" style="background-color: #ef4444; border-color: #ef4444; color: white;">Tolak Laporan</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- CKEditor 5 -->
+<script src="https://cdn.ckeditor.com/ckeditor5/39.0.1/classic/ckeditor.js"></script>
+<script>
+    let rejectEditor;
+    ClassicEditor
+        .create(document.querySelector('.ckeditor'))
+        .then(editor => {
+            rejectEditor = editor;
+            // Ensure editor data is synced to textarea on change
+            editor.model.document.on('change:data', () => {
+                editor.updateSourceElement();
+            });
+        })
+        .catch(error => {
+            console.error(error);
+        });
+
+    document.getElementById('rejectForm').addEventListener('submit', function(e) {
+        if (rejectEditor) {
+            const data = rejectEditor.getData().trim();
+            document.querySelector('textarea[name="alasan_tolak"]').value = data;
+            
+            if (!data) {
+                e.preventDefault();
+                alert('Silakan isi alasan penolakan terlebih dahulu.');
+            }
         }
     });
 </script>

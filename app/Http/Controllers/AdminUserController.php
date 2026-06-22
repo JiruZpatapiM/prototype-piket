@@ -23,7 +23,7 @@ class AdminUserController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'username' => 'required|string|max:255|unique:users',
-            'role' => 'required|in:admin,officer',
+            'role' => 'required|in:admin,officer,manager',
             'lokasi_fix' => 'nullable|string|max:255',
             'password' => 'required|string|min:6',
         ]);
@@ -49,7 +49,7 @@ class AdminUserController extends Controller
         $rules = [
             'name' => 'required|string|max:255',
             'username' => 'required|string|max:255|unique:users,username,' . $user->id,
-            'role' => 'required|in:admin,officer',
+            'role' => 'required|in:admin,officer,manager',
             'lokasi_fix' => 'nullable|string|max:255',
         ];
 

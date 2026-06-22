@@ -18,7 +18,7 @@
         </div>
     </div>
 
-    @if(auth()->check() && auth()->user()->role === 'admin')
+    @if(auth()->check() && in_array(auth()->user()->role, ['admin', 'manager']))
     <!-- Filter Bar (Minimalist) -->
     <div class="card mb-6" style="padding: 1.2rem 1.5rem; border-radius: 12px; border: 1px solid var(--border-color); background: var(--bg-primary); box-shadow: 0 4px 20px rgba(0,0,0,0.02);">
         <form method="GET" action="{{ route('dashboard') }}" class="flex items-end gap-4 flex-wrap" id="filterForm">
@@ -44,7 +44,7 @@
 
             <div style="flex: 1; min-width: 150px;">
                 <label style="display: block; font-size: 0.75rem; color: var(--text-secondary); font-weight: 600; margin-bottom: 0.5rem; text-transform: uppercase;">Cabang</label>
-                @if(auth()->check() && auth()->user()->role !== 'admin' && auth()->user()->lokasi_fix)
+                @if(auth()->check() && !in_array(auth()->user()->role, ['admin', 'manager']) && auth()->user()->lokasi_fix)
                     <input type="text" value="{{ auth()->user()->lokasi_fix }}" class="form-control" disabled style="background: rgba(255,255,255,0.05); color: var(--text-secondary); cursor: not-allowed; font-weight: 600;">
                     <input type="hidden" name="lokasi" value="{{ auth()->user()->lokasi_fix }}">
                 @else
@@ -66,7 +66,7 @@
                 @endif
             </div>
 
-            @if(auth()->check() && auth()->user()->role === 'admin')
+            @if(auth()->check() && in_array(auth()->user()->role, ['admin', 'manager']))
             <div style="margin-left: auto;">
                 <button type="button" class="btn btn-primary" style="display: flex; align-items: center; gap: 0.5rem; padding: 0.6rem 1.2rem; border-radius: 8px; font-weight: 600; box-shadow: 0 4px 12px rgba(14, 165, 233, 0.2);">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
@@ -81,7 +81,7 @@
     <!-- ============================================== -->
     <!-- VIEW UNTUK USER BIASA (CABANG) -->
     <!-- ============================================== -->
-    @if(auth()->check() && auth()->user()->role !== 'admin')
+    @if(auth()->check() && !in_array(auth()->user()->role, ['admin', 'manager']))
         <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4rem 2rem; background: var(--bg-secondary); border-radius: 16px; border: 1px solid var(--border-color); text-align: center;">
             <div style="width: 120px; height: 120px; border-radius: 50%; background: rgba(16, 185, 129, 0.1); display: flex; align-items: center; justify-content: center; margin-bottom: 1.5rem; border: 4px solid rgba(16, 185, 129, 0.2);">
                 <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
@@ -100,7 +100,7 @@
     <!-- ============================================== -->
     <!-- VIEW UNTUK ADMIN NASIONAL -->
     <!-- ============================================== -->
-    @if(auth()->check() && auth()->user()->role === 'admin')
+    @if(auth()->check() && in_array(auth()->user()->role, ['admin', 'manager']))
         <!-- KPI Cards -->
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
             <!-- Total Cabang -->
@@ -171,7 +171,8 @@
                     <div style="font-weight: 800; font-size: 1.1rem; color: var(--text-primary);">Ringkasan Grading per Area Monitoring</div>
                     <div class="flex gap-4" style="font-size: 0.75rem; font-weight: 600;">
                         <div style="display: flex; align-items: center; gap: 6px;"><span style="width: 10px; height: 10px; background: #10b981; border-radius: 50%;"></span> Baik</div>
-                        <div style="display: flex; align-items: center; gap: 6px;"><span style="width: 10px; height: 10px; background: #ef4444; border-radius: 50%;"></span> Kurang</div>
+                        <div style="display: flex; align-items: center; gap: 6px;"><span style="width: 10px; height: 10px; background: #f59e0b; border-radius: 50%;"></span> Perlu Atensi</div>
+                        <div style="display: flex; align-items: center; gap: 6px;"><span style="width: 10px; height: 10px; background: #ef4444; border-radius: 50%;"></span> Kritis</div>
                     </div>
                 </div>
 
@@ -182,8 +183,9 @@
                         <div style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 1rem; min-height: 40px; font-weight: 500;">{{ $grade['desc'] }}</div>
                         
                         <div style="display: flex; justify-content: center; gap: 0.5rem; margin-bottom: 1rem;">
-                            <div style="background: rgba(16,185,129,0.1); color: #10b981; padding: 0.3rem 0.6rem; border-radius: 6px; font-weight: bold; font-size: 0.85rem;">{{ $grade['baik'] }}</div>
-                            <div style="background: rgba(239,68,68,0.1); color: #ef4444; padding: 0.3rem 0.6rem; border-radius: 6px; font-weight: bold; font-size: 0.85rem;">{{ $grade['kurang'] }}</div>
+                            <div style="background: rgba(16,185,129,0.1); color: #10b981; padding: 0.3rem 0.6rem; border-radius: 6px; font-weight: bold; font-size: 0.85rem;" title="Laporan Baik">{{ $grade['baik'] }}</div>
+                            <div style="background: rgba(245,158,11,0.1); color: #f59e0b; padding: 0.3rem 0.6rem; border-radius: 6px; font-weight: bold; font-size: 0.85rem;" title="Laporan Perlu Atensi">{{ $grade['atensi'] }}</div>
+                            <div style="background: rgba(239,68,68,0.1); color: #ef4444; padding: 0.3rem 0.6rem; border-radius: 6px; font-weight: bold; font-size: 0.85rem;" title="Laporan Kritis">{{ $grade['kritis'] }}</div>
                         </div>
 
                         <div style="position: relative; width: 60px; height: 60px; margin: 0 auto;">
@@ -191,11 +193,12 @@
                                 <!-- Base Gray (Empty state) -->
                                 <path stroke-dasharray="100, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="var(--bg-tertiary)" stroke-width="4"/>
                                 
-                                @if($grade['baik'] > 0 || $grade['kurang'] > 0)
-                                    <!-- Base Red (Kurang) -->
-                                    <path stroke-dasharray="100, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#ef4444" stroke-width="4"/>
-                                    <!-- Overlay Green (Baik) -->
-                                    <path stroke-dasharray="{{ $grade['pct'] }}, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#10b981" stroke-width="4" stroke-linecap="round"/>
+                                @if($grade['baik'] > 0 || $grade['atensi'] > 0 || $grade['kritis'] > 0)
+                                    @php
+                                        $strokeColor = $grade['pct'] >= 65 ? '#10b981' : ($grade['pct'] >= 35 ? '#f59e0b' : '#ef4444');
+                                    @endphp
+                                    <!-- Overlay -->
+                                    <path stroke-dasharray="{{ $grade['pct'] }}, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="{{ $strokeColor }}" stroke-width="4" stroke-linecap="round"/>
                                 @endif
                             </svg>
                             <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 0.8rem; font-weight: bold; color: var(--text-primary);">{{ $grade['pct'] }}%</div>

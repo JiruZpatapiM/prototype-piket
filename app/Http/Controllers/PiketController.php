@@ -134,7 +134,7 @@ class PiketController extends Controller
         
         $persentase = $totalItems > 0 ? round(($answeredItems / $totalItems) * 100) : 0;
         $score = $scoredItemsCount > 0 ? round(($baikCount / $scoredItemsCount) * 100) : 0;
-        $status = $isDraft ? 'draft' : 'submitted';
+        $status = $isDraft ? 'draft' : 'pending';
 
         $input = PiketInput::create([
             'user_id' => Auth::id() ?? 1,
@@ -176,14 +176,14 @@ class PiketController extends Controller
             abort(403, 'Unauthorized access.');
         }
 
-        if ($draft->status !== 'draft') {
-            return redirect()->route('piket.history')->with('error', 'Hanya data draft yang dapat diedit.');
+        if (!in_array($draft->status, ['draft', 'rejected'])) {
+            return redirect()->route('piket.history')->with('error', 'Hanya data draft atau yang ditolak yang dapat diedit.');
         }
 
-        if (Auth::check() && Auth::user()->role !== 'admin') {
+        if (Auth::check() && Auth::user()->role !== 'admin' && Auth::user()->role !== 'manager') {
             $alreadySubmitted = PiketInput::where('user_id', Auth::id())
                 ->whereDate('created_at', \Carbon\Carbon::today())
-                ->where('status', 'submitted')
+                ->whereIn('status', ['pending', 'approved'])
                 ->exists();
                 
             if ($alreadySubmitted) {
@@ -219,8 +219,8 @@ class PiketController extends Controller
             abort(403, 'Unauthorized access.');
         }
 
-        if ($input->status !== 'draft') {
-            return redirect()->route('piket.history')->with('error', 'Hanya data draft yang dapat diedit.');
+        if (!in_array($input->status, ['draft', 'rejected'])) {
+            return redirect()->route('piket.history')->with('error', 'Hanya data draft atau yang ditolak yang dapat diedit.');
         }
 
         $validated = $request->validate([
@@ -257,10 +257,10 @@ class PiketController extends Controller
 
         $isDraft = $request->input('action') === 'draft';
         
-        if (!$isDraft && \Illuminate\Support\Facades\Auth::check() && \Illuminate\Support\Facades\Auth::user()->role !== 'admin') {
+        if (!$isDraft && \Illuminate\Support\Facades\Auth::check() && \Illuminate\Support\Facades\Auth::user()->role !== 'admin' && \Illuminate\Support\Facades\Auth::user()->role !== 'manager') {
             $alreadySubmitted = PiketInput::where('user_id', \Illuminate\Support\Facades\Auth::id())
                 ->whereDate('created_at', \Carbon\Carbon::today())
-                ->where('status', 'submitted')
+                ->whereIn('status', ['pending', 'approved'])
                 ->exists();
                 
             if ($alreadySubmitted) {
@@ -307,7 +307,7 @@ class PiketController extends Controller
         
         $persentase = $totalItems > 0 ? round(($answeredItems / $totalItems) * 100) : 0;
         $score = $scoredItemsCount > 0 ? round(($baikCount / $scoredItemsCount) * 100) : 0;
-        $status = $isDraft ? 'draft' : 'submitted';
+        $status = $isDraft ? 'draft' : 'pending';
 
         $input->update([
             'tanggal' => $validated['tanggal'],
@@ -348,7 +348,7 @@ class PiketController extends Controller
         $input = \App\Models\PiketInput::with('details')->findOrFail($id);
         
         // Ensure RBAC for download
-        if (\Illuminate\Support\Facades\Auth::user()->role !== 'admin' && $input->user_id !== \Illuminate\Support\Facades\Auth::id()) {
+        if (\Illuminate\Support\Facades\Auth::user()->role !== 'admin' && \Illuminate\Support\Facades\Auth::user()->role !== 'manager' && $input->user_id !== \Illuminate\Support\Facades\Auth::id()) {
             abort(403, 'Unauthorized access.');
         }
 
@@ -363,15 +363,36 @@ class PiketController extends Controller
         $input = \App\Models\PiketInput::findOrFail($id);
         
         // Ensure RBAC for download
-        if (\Illuminate\Support\Facades\Auth::user()->role !== 'admin' && $input->user_id !== \Illuminate\Support\Facades\Auth::id()) {
+        if (\Illuminate\Support\Facades\Auth::user()->role !== 'admin' && \Illuminate\Support\Facades\Auth::user()->role !== 'manager' && $input->user_id !== \Illuminate\Support\Facades\Auth::id()) {
             abort(403, 'Unauthorized access.');
         }
 
-        if (!$input->file_path || !\Illuminate\Support\Facades\Storage::disk('public')->exists($input->file_path)) {
+        if (!$input->file_path) {
             return back()->with('error', 'File lampiran tidak ditemukan.');
         }
 
-        return response()->download(storage_path('app/public/' . $input->file_path));
+        // Parse JSON array of paths
+        $decoded = json_decode($input->file_path, true);
+        $filePaths = is_array($decoded) ? $decoded : [$input->file_path];
+        
+        if (empty($filePaths)) {
+            return back()->with('error', 'File lampiran kosong.');
+        }
+
+        // Just download the first file for now (to avoid zip dependency)
+        $targetFile = $filePaths[0];
+
+        // Check if file exists in the direct public storage
+        $absolutePath = public_path('storage/' . $targetFile);
+        if (!file_exists($absolutePath)) {
+            // Fallback to private storage if it was uploaded before the fix
+            $absolutePath = storage_path('app/public/' . $targetFile);
+            if (!file_exists($absolutePath)) {
+                return back()->with('error', 'File lampiran tidak ditemukan di server.');
+            }
+        }
+
+        return response()->download($absolutePath);
     }
 
     public function history(Request $request)
@@ -401,9 +422,9 @@ class PiketController extends Controller
 
     public function laporan(Request $request)
     {
-        $query = PiketInput::whereNotNull('file_path')->where('file_path', '!=', '');
+        $query = PiketInput::whereIn('status', ['pending', 'approved', 'rejected']);
         
-        if (\Illuminate\Support\Facades\Auth::check() && \Illuminate\Support\Facades\Auth::user()->role !== 'admin') {
+        if (\Illuminate\Support\Facades\Auth::check() && \Illuminate\Support\Facades\Auth::user()->role !== 'admin' && \Illuminate\Support\Facades\Auth::user()->role !== 'manager') {
             $query->where('user_id', \Illuminate\Support\Facades\Auth::id());
         }
         
@@ -422,6 +443,24 @@ class PiketController extends Controller
         
         $history = $query->orderBy('tanggal', 'desc')->paginate(10);
         return view('piket.laporan', compact('history'));
+    }
+
+    public function approve($id)
+    {
+        $input = PiketInput::findOrFail($id);
+        $input->update(['status' => 'approved', 'alasan_tolak' => null]);
+        return redirect()->back()->with('success', 'Laporan berhasil disetujui!');
+    }
+
+    public function reject(Request $request, $id)
+    {
+        $request->validate(['alasan_tolak' => 'required|string']);
+        $input = PiketInput::findOrFail($id);
+        $input->update([
+            'status' => 'rejected',
+            'alasan_tolak' => $request->input('alasan_tolak')
+        ]);
+        return redirect()->back()->with('success', 'Laporan berhasil ditolak!');
     }
 
     public function downloadTemplate(Request $request)

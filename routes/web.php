@@ -17,7 +17,7 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-    Route::get('/cabang', [CabangController::class, 'index'])->name('cabang')->middleware('can:admin');
+    Route::get('/cabang', [CabangController::class, 'index'])->name('cabang')->middleware('can:admin_or_manager');
     
     Route::get('/piket/input', [PiketController::class, 'create'])->name('piket.input');
     Route::post('/piket/input', [PiketController::class, 'store'])->name('piket.store');
@@ -26,7 +26,9 @@ Route::middleware('auth')->group(function () {
     Route::put('/piket/update/{id}', [PiketController::class, 'update'])->name('piket.update');
     
     Route::get('/piket/history', [PiketController::class, 'history'])->name('piket.history');
-    Route::get('/piket/laporan', [PiketController::class, 'laporan'])->name('piket.laporan');
+    Route::get('/piket/laporan', [PiketController::class, 'laporan'])->name('piket.laporan')->middleware('can:admin_or_manager');
+    Route::post('/piket/approve/{id}', [PiketController::class, 'approve'])->name('piket.approve')->middleware('can:admin_or_manager');
+    Route::post('/piket/reject/{id}', [PiketController::class, 'reject'])->name('piket.reject')->middleware('can:admin_or_manager');
     
     Route::get('/piket/template', [PiketController::class, 'downloadTemplate'])->name('piket.template');
     Route::get('/piket/export-pdf/{id}', [PiketController::class, 'exportPdf'])->name('piket.exportPdf');

@@ -103,9 +103,9 @@ class AdminAndTemplateSeeder extends Seeder
                     [
                         'name' => '',
                         'items' => [
-                            'Evaluasi dan pemantauan proyeksi dibandingkan realisasi arus penumpang, kendaraan, dan barang', 
-                            'Evaluasi efektifitas dalam Posko Lebaran Terpadu bersama stakeholder terkait', 
-                            'Evaluasi harian kinerja operasional melalui penyampaian daily dashboard report kepada Direksi', 
+                            'Monitoring Fasilitas dan Operasional Pelabuhan', 
+                            'Posisi Sandar Kapal', 
+                            'Laporan insiden khusus', 
                             'Catatan'
                         ],
                         'kondisi_options' => [],
@@ -207,12 +207,17 @@ class AdminAndTemplateSeeder extends Seeder
                 ]
             ],
             [
-                'section_title' => 'F. RESUME PELAKSANAAN MONITORING',
+                'section_title' => 'F. Evaluasi dan Resume Pelaksanaan Monitoring',
                 'is_resume' => true,
                 'subsections' => [
                     [
                         'name' => '',
-                        'items' => ['Evaluasi Kondisi Fasilitas yang dipersyaratkan dibandingkan dengan kondisi eksiting (termasuk posko)', 'Evaluasi terhadap operasional realisasi arus kapal dan penumpang serta penerapan HSSE', 'Evaluasi Komplain dan media handling', 'Isu yang Memerlukan Perhatian Manajemen'],
+                        'items' => [
+                            'Monitoring Fasilitas dan Operasional Pelabuhan', 
+                            'Posisi Sandar Kapal', 
+                            'Laporan insiden khusus', 
+                            'Catatan'
+                        ],
                         'kondisi_options' => [],
                         'metode_options' => [],
                     ]

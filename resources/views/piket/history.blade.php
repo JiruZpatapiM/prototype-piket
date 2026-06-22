@@ -1,6 +1,36 @@
 @extends('layouts.app')
 
 @section('content')
+<style>
+    /* Modern Action Buttons */
+    .btn-action {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.35rem 0.75rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        border-radius: 6px;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        text-decoration: none;
+        cursor: pointer;
+        background-color: #fff;
+        white-space: nowrap;
+    }
+    .btn-action svg {
+        margin-right: 0.3rem;
+    }
+    .btn-action:hover {
+        transform: translateY(-1px);
+    }
+    .btn-draft { color: #f59e0b; border: 1px solid #fcd34d; }
+    .btn-draft:hover { background-color: #fffbeb; border-color: #f59e0b; }
+    .btn-pdf { color: #ef4444; border: 1px solid #fca5a5; }
+    .btn-pdf:hover { background-color: #fef2f2; border-color: #ef4444; }
+    .btn-gambar { color: #8b5cf6; border: 1px solid #c4b5fd; }
+    .btn-gambar:hover { background-color: #f5f3ff; border-color: #8b5cf6; }
+    .btn-download { color: #3b82f6; border: 1px solid #93c5fd; }
+    .btn-download:hover { background-color: #eff6ff; border-color: #3b82f6; }
+</style>
 <div class="container mt-8 pb-8" style="max-width: 1400px;">
     
     <div class="card" style="padding: 1.5rem;">
@@ -52,24 +82,34 @@
                 <tbody>
                     @forelse($history as $item)
                     <tr>
-                        <td>{{ $item->tanggal }}</td>
-                        <td>{{ $item->lokasi }}</td>
-                        <td style="text-transform: uppercase;">{{ $item->jenis_piket }}</td>
-                        <td>
-                            @if($item->status == 'draft')
-                                <span style="background: #e2e8f0; color: #475569; padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: bold; font-size: 0.8rem;">Draft</span>
+                        <td style="color: var(--text-primary); white-space: nowrap;">{{ $item->tanggal }}</td>
+                        <td style="color: var(--text-primary); font-weight: bold; white-space: nowrap;">{{ $item->lokasi }}</td>
+                        <td style="text-transform: uppercase; color: var(--text-primary); white-space: nowrap;">{{ $item->jenis_piket }}</td>
+                        <td style="color: var(--text-primary);">
+                            @if($item->status == 'pending')
+                                <span style="background: #fef3c7; color: #d97706; padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: bold; font-size: 0.8rem; white-space: nowrap;">Menunggu Konfirmasi</span>
+                            @elseif($item->status == 'approved' || $item->status == 'submitted')
+                                <span style="background: #d1fae5; color: #059669; padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: bold; font-size: 0.8rem; white-space: nowrap;">Disetujui</span>
+                            @elseif($item->status == 'rejected')
+                                <span style="background: #fee2e2; color: #dc2626; padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: bold; font-size: 0.8rem; white-space: nowrap;">Ditolak</span>
+                                @if($item->alasan_tolak)
+                                    <div style="margin-top: 0.5rem; padding: 0.5rem; background: #fef2f2; border: 1px solid #fecaca; border-radius: 6px; font-size: 0.75rem;">
+                                        <strong style="color: #dc2626;">Alasan Penolakan:</strong><br>
+                                        <div style="color: #7f1d1d;">{!! $item->alasan_tolak !!}</div>
+                                    </div>
+                                @endif
                             @else
-                                <span style="background: #d1fae5; color: #059669; padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: bold; font-size: 0.8rem;">Submitted</span>
+                                <span style="background: #e2e8f0; color: #475569; padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: bold; font-size: 0.8rem; white-space: nowrap;">Draft</span>
                             @endif
                         </td>
                         <td>
-                            @if($item->status == 'submitted')
+                            @if(in_array($item->status, ['submitted', 'approved', 'pending']))
                                 @if($item->score >= 65)
-                                    <span style="background: #d1fae5; color: #059669; padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: bold; font-size: 0.8rem;">{{ $item->score }}% (Baik)</span>
+                                    <span style="background: #d1fae5; color: #059669; padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: bold; font-size: 0.8rem; white-space: nowrap;">{{ $item->score }}% (Baik)</span>
                                 @elseif($item->score >= 35)
-                                    <span style="background: #fef3c7; color: #d97706; padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: bold; font-size: 0.8rem;">{{ $item->score }}% (Perlu Atensi)</span>
+                                    <span style="background: #fef3c7; color: #d97706; padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: bold; font-size: 0.8rem; white-space: nowrap;">{{ $item->score }}% (Perlu Atensi)</span>
                                 @else
-                                    <span style="background: #fee2e2; color: #dc2626; padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: bold; font-size: 0.8rem;">{{ $item->score }}% (Kritis)</span>
+                                    <span style="background: #fee2e2; color: #dc2626; padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: bold; font-size: 0.8rem; white-space: nowrap;">{{ $item->score }}% (Kritis)</span>
                                 @endif
                             @else
                                 <span style="color: #94a3b8;">-</span>
@@ -86,10 +126,10 @@
                         <td>{!! $item->catatan !!}</td>
                         <td>
                             <div style="display: flex; gap: 0.5rem; flex-wrap: nowrap;">
-                                @if($item->status == 'draft')
-                                    <a href="{{ route('piket.edit', $item->id) }}" class="btn-action btn-draft" title="Lanjutkan Pengisian Draft">
+                                @if($item->status == 'draft' || $item->status == 'rejected')
+                                    <a href="{{ route('piket.edit', $item->id) }}" class="btn-action btn-draft" title="Lanjutkan Pengisian">
                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-                                        Lanjutkan
+                                        @if($item->status == 'rejected') Perbaiki @else Lanjutkan @endif
                                     </a>
                                 @else
                                     <a href="{{ route('piket.exportPdf', $item->id) }}" class="btn-action btn-pdf" title="Download PDF">

@@ -13,7 +13,7 @@ class CabangController extends Controller
         $tanggal = $request->input('tanggal', date('Y-m-d'));
 
         // Ambil semua input piket pada tanggal tertentu
-        $piketInputs = PiketInput::where('tanggal', $tanggal)->get();
+        $piketInputs = PiketInput::where('tanggal', $tanggal)->where('status', 'approved')->get();
 
         // Daftar semua cabang (hardcoded sementara)
         $semuaCabang = [

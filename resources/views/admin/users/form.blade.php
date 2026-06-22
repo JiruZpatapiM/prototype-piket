@@ -30,6 +30,7 @@
                 <label class="form-label" style="font-weight: bold;">Role</label>
                 <select name="role" class="form-control" required style="background-color: var(--bg-tertiary);">
                     <option value="officer" {{ old('role', $user->role ?? '') == 'officer' ? 'selected' : '' }}>Officer (Piket)</option>
+                    <option value="manager" {{ old('role', $user->role ?? '') == 'manager' ? 'selected' : '' }}>Manager</option>
                     <option value="admin" {{ old('role', $user->role ?? '') == 'admin' ? 'selected' : '' }}>Admin</option>
                 </select>
                 @error('role')<div class="text-sm mt-1" style="color: var(--danger);">{{ $message }}</div>@enderror

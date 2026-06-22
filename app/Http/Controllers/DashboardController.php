@@ -13,7 +13,7 @@ class DashboardController extends Controller
         $tanggal_akhir = $request->input('tanggal_akhir', date('Y-m-d'));
         
         $user = auth()->user();
-        if ($user && $user->role !== 'admin' && $user->lokasi_fix) {
+        if ($user && !in_array($user->role, ['admin', 'manager']) && $user->lokasi_fix) {
             $lokasi = $user->lokasi_fix;
         } else {
             $lokasi = $request->input('lokasi', 'Semua Lokasi');
@@ -33,12 +33,12 @@ class DashboardController extends Controller
         // Dashboard Metrics Calculation
         $totalCabang = 22;
         
-        $latestSubmittedInputs = $piketInputs->where('status', 'submitted')->sortByDesc('created_at')->unique(function ($item) {
+        $latestSubmittedInputs = $piketInputs->where('status', 'approved')->sortByDesc('created_at')->unique(function ($item) {
             return $item->lokasi . '_' . $item->jenis_piket;
         });
         
         // Menghitung cabang yang sudah input hari ini berdasarkan lokasi yang unik
-        $cabangInput = $piketInputs->where('status', 'submitted')->unique('lokasi')->count();
+        $cabangInput = $piketInputs->where('status', 'approved')->unique('lokasi')->count();
         
         // Menghitung yang belum input
         $belumInput = max(0, $totalCabang - $cabangInput);
@@ -55,13 +55,20 @@ class DashboardController extends Controller
         $latestSubmittedInputs->load('details');
         
         $areaMapping = [
-            'Area 1' => ['desc' => 'Kesiapan Fasilitas Pelabuhan', 'baik' => 0, 'kurang' => 0, 'total' => 0, 'keys' => ['a'], 'keywords' => ['kesiapan', 'fasilitas']],
-            'Area 2' => ['desc' => 'Pelayanan Bongkar Muat & Operasional', 'baik' => 0, 'kurang' => 0, 'total' => 0, 'keys' => ['b'], 'keywords' => ['bongkar', 'muat', 'operasional']],
-            'Area 3' => ['desc' => 'Sarana Bantu Pemanduan & Penundaan (SBPP)', 'baik' => 0, 'kurang' => 0, 'total' => 0, 'keys' => ['c'], 'keywords' => ['pemanduan', 'penundaan', 'sbpp']],
-            'Area 4' => ['desc' => 'Komplain, Hubungan Kelembagaan & Media Handling', 'baik' => 0, 'kurang' => 0, 'total' => 0, 'keys' => ['d'], 'keywords' => ['komplain', 'kelembagaan', 'media']],
+            'Area 1' => ['desc' => 'Kesiapan Fasilitas Pelabuhan', 'baik' => 0, 'atensi' => 0, 'kritis' => 0, 'total_laporan' => 0, 'keys' => ['a'], 'keywords' => ['kesiapan', 'fasilitas']],
+            'Area 2' => ['desc' => 'Pelayanan Bongkar Muat & Operasional', 'baik' => 0, 'atensi' => 0, 'kritis' => 0, 'total_laporan' => 0, 'keys' => ['b'], 'keywords' => ['bongkar', 'muat', 'operasional']],
+            'Area 3' => ['desc' => 'Sarana Bantu Pemanduan & Penundaan (SBPP)', 'baik' => 0, 'atensi' => 0, 'kritis' => 0, 'total_laporan' => 0, 'keys' => ['c'], 'keywords' => ['pemanduan', 'penundaan', 'sbpp']],
+            'Area 4' => ['desc' => 'Komplain, Hubungan Kelembagaan & Media Handling', 'baik' => 0, 'atensi' => 0, 'kritis' => 0, 'total_laporan' => 0, 'keys' => ['d'], 'keywords' => ['komplain', 'kelembagaan', 'media']],
         ];
 
         foreach ($latestSubmittedInputs as $input) {
+            $laporanAreaCounts = [
+                'Area 1' => ['baik' => 0, 'total' => 0],
+                'Area 2' => ['baik' => 0, 'total' => 0],
+                'Area 3' => ['baik' => 0, 'total' => 0],
+                'Area 4' => ['baik' => 0, 'total' => 0],
+            ];
+
             foreach ($input->details as $detail) {
                 $categoryName = strtolower(trim($detail->category));
                 $kondisi = strtolower(trim($detail->kondisi));
@@ -82,12 +89,25 @@ class DashboardController extends Controller
                     }
                     
                     if ($matchedArea) {
-                        $areaMapping[$matchedArea]['total']++;
+                        $laporanAreaCounts[$matchedArea]['total']++;
                         if ($kondisi === 'baik') {
-                            $areaMapping[$matchedArea]['baik']++;
-                        } else if ($kondisi === 'kurang') {
-                            $areaMapping[$matchedArea]['kurang']++;
+                            $laporanAreaCounts[$matchedArea]['baik']++;
                         }
+                    }
+                }
+            }
+
+            foreach ($laporanAreaCounts as $areaKey => $counts) {
+                if ($counts['total'] > 0) {
+                    $areaMapping[$areaKey]['total_laporan']++;
+                    $score = ($counts['baik'] / $counts['total']) * 100;
+                    
+                    if ($score >= 65) {
+                        $areaMapping[$areaKey]['baik']++;
+                    } else if ($score >= 35) {
+                        $areaMapping[$areaKey]['atensi']++;
+                    } else {
+                        $areaMapping[$areaKey]['kritis']++;
                     }
                 }
             }
@@ -95,13 +115,13 @@ class DashboardController extends Controller
 
         $ringkasanGrading = [];
         foreach ($areaMapping as $areaKey => $data) {
-            $pct = $data['total'] > 0 ? round(($data['baik'] / $data['total']) * 100) : 0;
+            $pct = $data['total_laporan'] > 0 ? round(($data['baik'] / $data['total_laporan']) * 100) : 0;
             $ringkasanGrading[] = [
                 'area' => $areaKey,
                 'desc' => $data['desc'],
                 'baik' => $data['baik'],
-                'cukup' => 0, // Cukup is not an option in the current form structure
-                'kurang' => $data['kurang'],
+                'atensi' => $data['atensi'],
+                'kritis' => $data['kritis'],
                 'pct' => $pct
             ];
         }

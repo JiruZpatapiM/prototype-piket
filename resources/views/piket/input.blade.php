@@ -20,13 +20,13 @@
     .accordion-item { margin-bottom: 1.5rem; border-radius: 12px; background: var(--bg-primary); box-shadow: 0 2px 4px rgba(0,0,0,0.02); transition: all 0.3s ease; }
     .accordion-item:hover { box-shadow: 0 8px 16px rgba(0,0,0,0.06); }
     .accordion-header { cursor: pointer; padding: 1.25rem 1.75rem; background: var(--bg-primary); display: flex; justify-content: space-between; align-items: center; border-radius: 12px; transition: all 0.2s ease; border: 1px solid var(--border-color); }
-    .accordion-header:hover { background: #f8fafc; border-color: #cbd5e1; }
+    .accordion-header:hover { background: var(--bg-secondary); border-color: var(--border-color); }
     .accordion-content { display: none; padding: 0; }
     .accordion-item.active .accordion-content { display: block; margin-bottom: 0; }
-    .accordion-item.active .accordion-header { border-bottom-left-radius: 0; border-bottom-right-radius: 0; border-bottom: 1px dashed #cbd5e1; background: #f8fafc; margin-bottom: 0; }
-    .accordion-icon { transition: transform 0.3s; color: #64748b; }
-    .accordion-item.active .accordion-icon { transform: rotate(180deg); color: #0ea5e9; }
-    .acc-title-text { font-weight: 700; font-size: 1.05rem; color: #0f172a; }
+    .accordion-item.active .accordion-header { border-bottom-left-radius: 0; border-bottom-right-radius: 0; border-bottom: 1px dashed var(--border-color); background: var(--bg-secondary); margin-bottom: 0; }
+    .accordion-icon { transition: transform 0.3s; color: var(--text-secondary); }
+    .accordion-item.active .accordion-icon { transform: rotate(180deg); color: var(--accent-primary); }
+    .acc-title-text { font-weight: 700; font-size: 1.05rem; color: var(--text-primary); }
 
     .checklist-row { display: flex; align-items: center; justify-content: space-between; padding: 1.2rem 1.5rem; border: 1px solid var(--border-color); border-top: none; background: var(--bg-primary); gap: 1.5rem; }
     .checklist-row:last-child { border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; }
@@ -172,14 +172,16 @@ function renderSection($sectionName, $subSectionName, $items, $kondisiOptions = 
     return $html;
 }
 
-function renderResumeSection($sectionName, $items, $sIndex = null, $subIndex = null, $templateId = null, $draftDetails = []) {
+function renderResumeSection($sectionName, $items, $sIndex = null, $subIndex = null, $templateId = null, $draftDetails = [], $displayTitle = null) {
     $accordionId = 'acc_' . md5($sectionName . 'Resume');
     
-    $displaySectionName = ucwords(strtolower($sectionName));
-    $displaySectionName = str_replace(['Hsse', 'Sdm', 'Cctv', 'B/m', 'Sbpp'], ['HSSE', 'SDM', 'CCTV', 'B/M', 'SBPP'], $displaySectionName);
-    
-    // Remove the A., B., C. prefix from title logic if it's there
-    $displaySectionName = preg_replace('/^[A-Z]\.\s*/i', '', $displaySectionName);
+    if ($displayTitle) {
+        $displaySectionName = $displayTitle;
+    } else {
+        $displaySectionName = ucwords(strtolower($sectionName));
+        $displaySectionName = str_replace(['Hsse', 'Sdm', 'Cctv', 'B/m', 'Sbpp'], ['HSSE', 'SDM', 'CCTV', 'B/M', 'SBPP'], $displaySectionName);
+        $displaySectionName = preg_replace('/^[A-Z]\.\s*/i', '', $displaySectionName);
+    }
 
     // Make accordion closed by default
     $html = '<div class="accordion-item" id="'.$accordionId.'">';
@@ -217,7 +219,38 @@ function renderResumeSection($sectionName, $items, $sIndex = null, $subIndex = n
 }
 @endphp
 
-<div class="container mt-4 pb-8" style="max-width: 1400px;">
+@section('content')
+<style>
+    /* Modern Action Buttons */
+    .btn-action {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.35rem 0.75rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        border-radius: 6px;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        text-decoration: none;
+        cursor: pointer;
+        background-color: #fff;
+        white-space: nowrap;
+    }
+    .btn-action svg {
+        margin-right: 0.3rem;
+    }
+    .btn-action:hover {
+        transform: translateY(-1px);
+    }
+    .btn-draft { color: #f59e0b; border: 1px solid #fcd34d; }
+    .btn-draft:hover { background-color: #fffbeb; border-color: #f59e0b; }
+    .btn-pdf { color: #ef4444; border: 1px solid #fca5a5; }
+    .btn-pdf:hover { background-color: #fef2f2; border-color: #ef4444; }
+    .btn-gambar { color: #8b5cf6; border: 1px solid #c4b5fd; }
+    .btn-gambar:hover { background-color: #f5f3ff; border-color: #8b5cf6; }
+    .btn-download { color: #3b82f6; border: 1px solid #93c5fd; }
+    .btn-download:hover { background-color: #eff6ff; border-color: #3b82f6; }
+</style>
+<div class="container mt-8 pb-8" style="max-width: 1400px;">
     
     <!-- Modern Header / Filters -->
     <div class="card card-filter" style="margin-bottom: 3rem;">
@@ -336,7 +369,7 @@ function renderResumeSection($sectionName, $items, $sIndex = null, $subIndex = n
                     
                     @foreach($section['subsections'] as $subIndex => $sub)
                         @if($section['is_resume'])
-                            {!! renderResumeSection('RESUME', $sub['items'], $sIndex, $subIndex, $template->id, $draftDetailsData) !!}
+                            {!! renderResumeSection('RESUME', $sub['items'], $sIndex, $subIndex, $template->id, $draftDetailsData, $displayTitle) !!}
                         @else
                             @php
                                 $secName = explode('. ', $section['section_title'])[0] ?? 'Section'; 
@@ -395,7 +428,7 @@ function renderResumeSection($sectionName, $items, $sIndex = null, $subIndex = n
 
                 <div class="form-group mb-8">
                     <label class="form-label" style="font-weight: 700;">Catatan Tambahan (Opsional)</label>
-                    <textarea name="catatan" class="form-control" rows="3" placeholder="Tambahkan informasi ekstra yang relevan..." style="border-radius: 12px;">{{ isset($draft) ? $draft->catatan : '' }}</textarea>
+                    <textarea name="catatan" class="form-control tinymce-editor" rows="3" placeholder="Tambahkan informasi ekstra yang relevan..." style="border-radius: 12px;">{{ isset($draft) ? $draft->catatan : '' }}</textarea>
                 </div>
 
                 <div style="display: flex; gap: 1rem;">
@@ -442,25 +475,37 @@ function renderResumeSection($sectionName, $items, $sIndex = null, $subIndex = n
                     @endphp
                     @forelse($riwayat as $row)
                     <tr style="border-bottom: 1px solid var(--border-color); transition: background 0.2s;">
-                        <td style="padding: 1rem;">{{ \Carbon\Carbon::parse($row->tanggal)->translatedFormat('d M Y') }}</td>
-                        <td style="padding: 1rem; font-weight: bold;">{{ $row->lokasi }}</td>
-                        <td style="padding: 1rem;">{{ $row->jenis_piket }}</td>
-                        <td style="padding: 1rem;">{{ $row->user ? $row->user->name : 'N/A' }}</td>
+                        <td style="padding: 1rem; color: var(--text-primary); white-space: nowrap;">{{ \Carbon\Carbon::parse($row->tanggal)->translatedFormat('d M Y') }}</td>
+                        <td style="padding: 1rem; font-weight: bold; color: var(--text-primary); white-space: nowrap;">
+                            {{ $row->lokasi }}
+                        </td>
+                        <td style="padding: 1rem; color: var(--text-primary); white-space: nowrap;">{{ $row->jenis_piket }}</td>
+                        <td style="padding: 1rem; color: var(--text-primary); white-space: nowrap;">{{ $row->user ? $row->user->name : 'N/A' }}</td>
                         <td style="padding: 1rem;">
-                            @if($row->status == 'draft')
-                                <span style="background: #e2e8f0; color: #475569; padding: 0.3rem 0.6rem; border-radius: 6px; font-size: 0.8rem; font-weight: bold;">Draft</span>
+                            @if($row->status == 'pending')
+                                <span style="background: #fef3c7; color: #d97706; padding: 0.3rem 0.6rem; border-radius: 6px; font-size: 0.8rem; font-weight: bold; white-space: nowrap;">Menunggu Konfirmasi</span>
+                            @elseif($row->status == 'approved' || $row->status == 'submitted')
+                                <span style="background: #d1fae5; color: #059669; padding: 0.3rem 0.6rem; border-radius: 6px; font-size: 0.8rem; font-weight: bold; white-space: nowrap;">Disetujui</span>
+                            @elseif($row->status == 'rejected')
+                                <span style="background: #fee2e2; color: #dc2626; padding: 0.3rem 0.6rem; border-radius: 6px; font-size: 0.8rem; font-weight: bold; white-space: nowrap;">Ditolak</span>
+                                @if($row->alasan_tolak)
+                                    <div style="margin-top: 0.5rem; padding: 0.5rem; background: #fef2f2; border: 1px solid #fecaca; border-radius: 6px; font-size: 0.75rem;">
+                                        <strong style="color: #dc2626;">Alasan Penolakan:</strong><br>
+                                        <div style="color: #7f1d1d;">{!! $row->alasan_tolak !!}</div>
+                                    </div>
+                                @endif
                             @else
-                                <span style="background: #d1fae5; color: #059669; padding: 0.3rem 0.6rem; border-radius: 6px; font-size: 0.8rem; font-weight: bold;">Submitted</span>
+                                <span style="background: #e2e8f0; color: #475569; padding: 0.3rem 0.6rem; border-radius: 6px; font-size: 0.8rem; font-weight: bold; white-space: nowrap;">Draft</span>
                             @endif
                         </td>
                         <td style="padding: 1rem;">
                             @if($row->status == 'submitted')
                                 @if($row->score >= 65)
-                                    <span style="background: #d1fae5; color: #059669; padding: 0.3rem 0.6rem; border-radius: 6px; font-size: 0.8rem; font-weight: bold;">{{ $row->score }}% (Baik)</span>
+                                    <span style="background: #d1fae5; color: #059669; padding: 0.3rem 0.6rem; border-radius: 6px; font-size: 0.8rem; font-weight: bold; white-space: nowrap;">{{ $row->score }}% (Baik)</span>
                                 @elseif($row->score >= 35)
-                                    <span style="background: #fef3c7; color: #d97706; padding: 0.3rem 0.6rem; border-radius: 6px; font-size: 0.8rem; font-weight: bold;">{{ $row->score }}% (Perlu Atensi)</span>
+                                    <span style="background: #fef3c7; color: #d97706; padding: 0.3rem 0.6rem; border-radius: 6px; font-size: 0.8rem; font-weight: bold; white-space: nowrap;">{{ $row->score }}% (Perlu Atensi)</span>
                                 @else
-                                    <span style="background: #fee2e2; color: #dc2626; padding: 0.3rem 0.6rem; border-radius: 6px; font-size: 0.8rem; font-weight: bold;">{{ $row->score }}% (Kritis)</span>
+                                    <span style="background: #fee2e2; color: #dc2626; padding: 0.3rem 0.6rem; border-radius: 6px; font-size: 0.8rem; font-weight: bold; white-space: nowrap;">{{ $row->score }}% (Kritis)</span>
                                 @endif
                             @else
                                 <span style="color: #94a3b8;">-</span>
@@ -475,19 +520,15 @@ function renderResumeSection($sectionName, $items, $sIndex = null, $subIndex = n
                             </div>
                         </td>
                         <td style="padding: 1rem; display: flex; gap: 0.5rem; flex-wrap: nowrap;">
-                            @if($row->status == 'draft')
-                                <a href="{{ route('piket.edit', $row->id) }}" class="btn btn-primary btn-sm" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; background: #f59e0b; border-color: #f59e0b; color: #fff;" title="Lanjutkan Pengisian Draft">
-                                    ✏️ Lanjutkan
+                            @if($row->status == 'draft' || $row->status == 'rejected')
+                                <a href="{{ route('piket.edit', $row->id) }}" class="btn-action btn-draft" title="Lanjutkan Pengisian">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                    @if($row->status == 'rejected') Perbaiki @else Lanjutkan @endif
                                 </a>
                             @else
-                                <a href="{{ route('piket.exportPdf', $row->id) }}" class="btn btn-outline btn-sm" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; border-color: #ef4444; color: #ef4444;" title="Download PDF">
-                                    📄 PDF
-                                </a>
-                            @endif
-                            
-                            @if($row->file_path)
-                                <a href="{{ route('piket.downloadLampiran', $row->id) }}" class="btn btn-outline btn-sm" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; border-color: #3b82f6; color: #3b82f6;" title="Download Lampiran">
-                                    📎 Lampiran
+                                <a href="{{ route('piket.exportPdf', $row->id) }}" class="btn-action btn-pdf" title="Download PDF">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                                    PDF
                                 </a>
                             @endif
                         </td>
@@ -930,6 +971,34 @@ function renderResumeSection($sectionName, $items, $sIndex = null, $subIndex = n
     .ck.ck-content li {
         display: list-item !important;
         margin-bottom: 0.3rem !important;
+    }
+    
+    /* Theme-Aware CKEditor Overrides */
+    .ck.ck-editor__main > .ck-editor__editable,
+    .ck.ck-toolbar {
+        background-color: var(--bg-primary) !important;
+        border-color: var(--border-color) !important;
+        color: var(--text-primary) !important;
+    }
+    .ck.ck-toolbar__items {
+        background-color: var(--bg-primary) !important;
+    }
+    .ck.ck-button {
+        color: var(--text-primary) !important;
+    }
+    .ck.ck-button:hover {
+        background-color: var(--bg-secondary) !important;
+    }
+    .ck.ck-button.ck-on {
+        background-color: var(--bg-secondary) !important;
+        color: var(--accent-primary) !important;
+    }
+    .ck.ck-dropdown__panel {
+        background-color: var(--bg-primary) !important;
+        border-color: var(--border-color) !important;
+    }
+    .ck.ck-list__item > .ck-button:hover {
+        background-color: var(--bg-secondary) !important;
     }
 </style>
 <script>

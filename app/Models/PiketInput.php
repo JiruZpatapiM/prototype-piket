@@ -16,6 +16,7 @@ class PiketInput extends Model
         'score',
         'catatan',
         'file_path',
+        'alasan_tolak',
     ];
 
     public function user()

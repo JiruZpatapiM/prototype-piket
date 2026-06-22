@@ -314,7 +314,23 @@
                 <div class="section-title">LAMPIRAN FOTO / DOKUMENTASI</div>
                 <div style="text-align: center; margin-top: 15px;">
                     @foreach($imagePaths as $path)
-                        <img src="{{ storage_path('app/public/' . $path) }}" style="max-width: 45%; max-height: 250px; border: 1px solid #ccc; padding: 5px; margin: 5px; display: inline-block; vertical-align: top;">
+                        @php
+                            $imgPath = public_path('storage/' . $path);
+                            if (!file_exists($imgPath)) {
+                                $imgPath = storage_path('app/public/' . $path);
+                            }
+                            
+                            $imgBase64 = '';
+                            if (file_exists($imgPath)) {
+                                $ext = strtolower(pathinfo($imgPath, PATHINFO_EXTENSION));
+                                $mime = $ext == 'jpg' ? 'jpeg' : $ext;
+                                $data = file_get_contents($imgPath);
+                                $imgBase64 = 'data:image/' . $mime . ';base64,' . base64_encode($data);
+                            }
+                        @endphp
+                        @if($imgBase64)
+                            <img src="{{ $imgBase64 }}" style="max-width: 45%; max-height: 250px; border: 1px solid #ccc; padding: 5px; margin: 5px; display: inline-block; vertical-align: top;">
+                        @endif
                     @endforeach
                 </div>
             </div>
