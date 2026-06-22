@@ -776,8 +776,13 @@ function renderResumeSection($sectionName, $items, $sIndex = null, $subIndex = n
             if (hasError) {
                 e.preventDefault(); // Stop submission
                 
-                // Show a brief alert to the user
-                alert('Terdapat bagian form yang belum diisi. Silakan periksa bagian yang ditandai merah.');
+                // Show a brief alert to the user using SweetAlert2
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Oops...',
+                    text: 'Terdapat bagian form yang belum diisi. Silakan periksa bagian yang ditandai merah.',
+                    confirmButtonColor: '#0ea5e9'
+                });
                 
                 // Scroll to the first error smoothly
                 if (firstErrorElement) {
@@ -894,7 +899,12 @@ function renderResumeSection($sectionName, $items, $sIndex = null, $subIndex = n
                 if (data.success) {
                     location.reload();
                 } else {
-                    alert('Gagal menambahkan item: ' + (data.message || 'Unknown error'));
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Gagal',
+                        text: 'Gagal menambahkan item: ' + (data.message || 'Unknown error'),
+                        confirmButtonColor: '#ef4444'
+                    });
                     closeCustomModal();
                     btn.innerText = originalText;
                     btn.style.opacity = '1';
@@ -902,7 +912,12 @@ function renderResumeSection($sectionName, $items, $sIndex = null, $subIndex = n
                 }
             })
             .catch(err => {
-                alert('Terjadi kesalahan sistem.');
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Terjadi kesalahan sistem saat menghubungi server.',
+                    confirmButtonColor: '#ef4444'
+                });
                 closeCustomModal();
                 btn.innerText = originalText;
                 btn.style.opacity = '1';
@@ -932,7 +947,12 @@ function renderResumeSection($sectionName, $items, $sIndex = null, $subIndex = n
                 if (data.success) {
                     location.reload();
                 } else {
-                    alert('Gagal menghapus item: ' + (data.message || 'Unknown error'));
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Gagal',
+                        text: 'Gagal menghapus item: ' + (data.message || 'Unknown error'),
+                        confirmButtonColor: '#ef4444'
+                    });
                     closeCustomModal();
                     btn.innerText = originalText;
                     btn.style.opacity = '1';
@@ -940,7 +960,12 @@ function renderResumeSection($sectionName, $items, $sIndex = null, $subIndex = n
                 }
             })
             .catch(err => {
-                alert('Terjadi kesalahan sistem.');
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Terjadi kesalahan sistem saat menghubungi server.',
+                    confirmButtonColor: '#ef4444'
+                });
                 closeCustomModal();
                 btn.innerText = originalText;
                 btn.style.opacity = '1';

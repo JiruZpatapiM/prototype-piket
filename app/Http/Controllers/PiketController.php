@@ -84,10 +84,10 @@ class PiketController extends Controller
 
         $isDraft = $request->input('action') === 'draft';
         
-        if (!$isDraft && \Illuminate\Support\Facades\Auth::check() && \Illuminate\Support\Facades\Auth::user()->role !== 'admin') {
+        if (!$isDraft && \Illuminate\Support\Facades\Auth::check() && \Illuminate\Support\Facades\Auth::user()->role !== 'admin' && \Illuminate\Support\Facades\Auth::user()->role !== 'manager') {
             $alreadySubmitted = PiketInput::where('user_id', \Illuminate\Support\Facades\Auth::id())
                 ->whereDate('created_at', \Carbon\Carbon::today())
-                ->where('status', 'submitted')
+                ->whereIn('status', ['pending', 'approved'])
                 ->exists();
                 
             if ($alreadySubmitted) {

@@ -7,6 +7,7 @@
     <!-- Google Fonts: Inter -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ asset('css/app.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         .theme-toggle { background: transparent; border: none; color: var(--text-secondary); cursor: pointer; padding: 0.5rem; font-size: 1.2rem; }
         .theme-toggle:hover { color: var(--accent-primary); }
